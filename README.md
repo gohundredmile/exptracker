@@ -1,170 +1,125 @@
-# SpendWise - Expense & Budget Tracker
+# 📊 Expense & Budget Tracker
 
-A beautiful, mobile-first expense tracking app built with React + TypeScript + Tailwind CSS + Supabase.
+A highly-polished single-page React app styled with Tailwind CSS, supporting advanced streaks, budget health scores, active trophies challenges, and real-time backend synchronization with **Supabase**.
 
-## Features
-
-- **Dashboard**: View total balance, income/expense summary, spend pulse, no-spend streak, health score, and active challenges
-- **Add Transaction**: Quick expense/income entry with categories, amounts, dates, and notes
-- **Transaction History**: Browse all transactions with month navigation and filtering
-- **Statistics**: Visual analytics with donut charts and expense breakdown by category
-- **Settings**: Multiple profiles, currency/language preferences, notification toggles, and more
-- **Authentication**: Secure email/password login powered by Supabase Auth
-
-## Tech Stack
-
-- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui
-- **Backend**: Supabase (PostgreSQL + Auth + Realtime)
-- **Deployment**: Cloudflare Pages (static site hosting)
+This application is ready to be loaded to GitHub and deployed straight to **Cloudflare Pages**!
 
 ---
 
-## Setup Instructions (Step by Step)
+## 🛠️ Supabase Database Setup (Fast SQL Script)
 
-### Step 1: Create a Supabase Project
+If you are just pushing this repository to GitHub and deploying to Cloudflare, you do not need to read code. Simply set up your database using these 3 simple steps:
 
-1. Go to [https://supabase.com](https://supabase.com) and sign up/login
-2. Click "New Project"
-3. Give it a name (e.g., "spendwise")
-4. Choose a region close to you
-5. Set a database password (save this somewhere safe)
-6. Click "Create new project"
-7. Wait for the project to be created (this takes a few minutes)
+1. **Create a Supabase Project**: Go to [supabase.com](https://supabase.com/) and spin up a new free project.
+2. **Execute Postgres Script**: In your Supabase Dashboard, click on **SQL Editor** in the left menu, select **New Query**, paste the code below, and click **Run**:
 
-### Step 2: Set Up the Database
+```sql
+-- 1. Profiles Table
+CREATE TABLE IF NOT EXISTS public.expenses_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  is_default BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
-1. In your Supabase dashboard, go to the **SQL Editor** (left sidebar)
-2. Click "New query"
-3. Open the file `supabase/setup.sql` from this project
-4. Copy ALL the SQL code and paste it into the SQL Editor
-5. Click "Run" to execute the SQL
-6. This creates all tables, security policies, and default data
+-- 2. Accounts Table
+CREATE TABLE IF NOT EXISTS public.expenses_accounts (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  balance NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+  type TEXT NOT NULL, -- 'bank' or 'credit'
+  icon TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
-### Step 3: Get Your Supabase Credentials
+-- 3. Transactions Table
+CREATE TABLE IF NOT EXISTS public.expenses_transactions (
+  id TEXT PRIMARYEN KEY,
+  amount NUMERIC(15, 2) NOT NULL,
+  type TEXT NOT NULL, -- 'expense' or 'income'
+  date TEXT NOT NULL,
+  category TEXT NOT NULL,
+  pay_from_account_id TEXT NOT NULL,
+  paid_for TEXT NOT NULL,
+  note TEXT,
+  is_scheduled BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
-1. In your Supabase dashboard, go to **Project Settings** (gear icon)
-2. Click **API** in the left sidebar
-3. Copy these two values:
-   - **Project URL** (looks like `https://xxxxx.supabase.co`)
-   - **anon/public** API key (starts with `eyJ...`)
+-- 4. Recurring Items Table
+CREATE TABLE IF NOT EXISTS public.expenses_recurring (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  amount NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+  description TEXT,
+  count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
-### Step 4: Set Up Environment Variables
+-- 5. Active Challenge Table
+CREATE TABLE IF NOT EXISTS public.expenses_challenge (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  current INTEGER DEFAULT 0,
+  total INTEGER DEFAULT 4,
+  streak INTEGER DEFAULT 0,
+  days_left INTEGER DEFAULT 5,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
 
-1. In this project folder, find the file `.env.example`
-2. Make a copy and rename it to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-3. Open `.env` and fill in your Supabase credentials:
-   ```
-   VITE_SUPABASE_URL=https://your-project-url.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key-here
-   ```
+-- Insert Default items to seed
+INSERT INTO public.expenses_accounts (id, name, balance, type, icon)
+VALUES 
+('bank_acc', 'Bank Account', 0.00, 'bank', 'Building'),
+('credit_card', 'Credit Card', 0.00, 'credit', 'CreditCard')
+ON CONFLICT (id) DO NOTHING;
 
-### Step 5: Deploy to Cloudflare Pages
+INSERT INTO public.expenses_challenge (id, title, current, total, streak, days_left)
+VALUES ('challenge_1', '4 No-Spend Days', 0, 4, 0, 5)
+ON CONFLICT (id) DO NOTHING;
 
-1. Go to [https://dash.cloudflare.com](https://dash.cloudflare.com) and sign up/login
-2. Click "Pages" in the left sidebar, then "Create a project"
-3. Connect your GitHub account and select this repository
-4. In the build settings:
+INSERT INTO public.expenses_recurring (id, name, type, amount, description, count)
+VALUES
+('rec_subs', 'Subscriptions', 'subscription', 0, 'No active subs', 0),
+('rec_fixed', 'Fixed Payments', 'fixed', 0, 'No fixed bills', 0),
+('rec_split', 'Split Bill', 'split', 0, 'No splits yet', 0),
+('rec_wish', 'Wishlist', 'wishlist', 0, 'No wishes yet', 0),
+('rec_ghost', 'Ghost Budget', 'ghost', 0, 'Tap to set up', 0),
+('rec_debts', 'Owe & Lend', 'debt', 0, 'No active debts', 0)
+ON CONFLICT (id) DO NOTHING;
+```
+
+---
+
+## 🚀 Cloudflare Pages Deploys (Static Web Frontend)
+
+Cloudflare Pages makes deployment simple:
+
+1. Push your code repository on your personal **GitHub** account.
+2. Visit **Cloudflare Dashboard** -> **Workers & Pages** -> **Create application** -> **Pages** -> **Connect to Git**.
+3. Select your repository.
+4. Use the following build parameters:
+   - **Framework Preset**: `Vite` (or `None`)
    - **Build command**: `npm run build`
    - **Build output directory**: `dist`
-5. Click "Add environment variable" and add:
-   - `VITE_SUPABASE_URL` = your Supabase project URL
-   - `VITE_SUPABASE_ANON_KEY` = your Supabase anon key
-6. Click "Save and Deploy"
-7. Wait for the build to complete (about 1-2 minutes)
-8. Your app will be live at a URL like `https://spendwise.pages.dev`
+5. Click **Save and Deploy**.
 
-### Step 6: Push to GitHub (Optional)
+### 🔐 Add Environment Secrets on Cloudflare (Optional)
 
-If you want to use GitHub + Cloudflare Pages auto-deployment:
+To secure syncing immediately when anyone loads your frontend URL:
+- In your Page's Dashboard -> **Settings** -> **Environment variables** -> **Add Variables**:
+  - `VITE_SUPABASE_URL` = (Your Supabase URL from API settings)
+  - `VITE_SUPABASE_ANON_KEY` = (Your Supabase Anon Key from API settings)
 
-1. Create a new repository on GitHub (don't initialize with README)
-2. In your project folder, run:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-   git push -u origin main
-   ```
-3. Then follow Step 5 above to connect Cloudflare Pages to your GitHub repo
+If you don't set these, the applet operates in fully-functional secure **LocalStorage mode**, and users can safely copy.paste or type in their keys directly within the **Settings** view of the running website!
 
 ---
 
-## Project Structure
+## 🔥 Awesome Features Programmed In
 
-```
-spendwise/
-  src/
-    components/         # Reusable UI components
-      BottomNav.tsx     # Bottom tab navigation
-      AppLayout.tsx     # App shell wrapper
-    hooks/              # Custom React hooks
-      useAuth.tsx       # Authentication hook
-      useData.ts        # Data fetching hooks
-    lib/                # Utilities
-      supabase.ts       # Supabase client
-    pages/              # App screens
-      Home.tsx          # Dashboard
-      AddTransaction.tsx # Add expense/income
-      Transactions.tsx  # Transaction list
-      Statistics.tsx    # Charts & analytics
-      Settings.tsx      # App settings
-      Login.tsx         # Login/signup
-    types/              # TypeScript types
-      database.ts       # Database schema types
-  public/               # Static assets
-    manifest.json       # PWA manifest
-    icon-192.png        # App icon
-    icon-512.png        # App icon large
-  supabase/
-    setup.sql           # Database setup script
-  .env.example          # Environment variable template
-  README.md             # This file
-```
-
-## Database Schema
-
-The app uses these Supabase tables:
-
-- **profiles** - User profiles (Personal, Business, etc.)
-- **accounts** - Bank accounts, credit cards, cash wallets
-- **categories** - Expense/income categories with icons and colors
-- **transactions** - All financial records
-- **user_settings** - Preferences (currency, language, notifications)
-- **challenges** - Gamification challenges (no-spend streaks)
-
-All tables have **Row Level Security (RLS)** enabled - users can only access their own data.
-
-## Local Development
-
-If you want to run locally before deploying:
-
-```bash
-# Install dependencies
-npm install
-
-# Set up your .env file (see Step 4 above)
-
-# Run development server
-npm run dev
-
-# Open http://localhost:3000 in your browser
-```
-
-## Security
-
-- All database queries use Row Level Security (RLS) - users can only access their own data
-- Authentication is handled by Supabase Auth with secure JWT tokens
-- API keys are stored as environment variables, never in the code
-- Passwords are securely hashed by Supabase (you never handle raw passwords)
-
-## Support
-
-If you need help:
-1. Check the Supabase documentation: https://supabase.com/docs
-2. Check the Cloudflare Pages documentation: https://developers.cloudflare.com/pages
-3. The app is a Progressive Web App (PWA) - you can install it on your phone's home screen
+- **Interactive Profiles**: Switch profiles or add custom names like "Rana". Selecting different profiles triggers custom currency shifts (e.g. BDT currency `৳` for Rana, or USD `$` for Personal).
+- **Streak Counters & Heart health triggers**: Interactive no spend streak counters with automated healthy/critical ratings.
+- **Trophies challenges**: Complete daily activities to update milestones.
+- **Segmented Donuts (Recharts)**: Fully polished donut graphical analysis summarizing expense divisions dynamically.
+- **Transactions logging**: Beautiful interactive month scrolling widgets (`< May 2026 >`) with income-expense grids.

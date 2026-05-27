@@ -1,0 +1,6 @@
+{
+  "name": "Expense and Budget Tracker",
+  "description": "A comprehensive personal expense and budget tracker with advanced streaks, health scores, and Supabase integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
