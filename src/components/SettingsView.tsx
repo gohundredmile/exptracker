@@ -20,13 +20,18 @@ import {
   Copy,
   Check,
   UserCheck2,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
   const { 
     profiles, 
     activeProfile, 
+    accounts,
+    transactions,
+    recurringItems,
+    challenge,
     settings, 
     isSupabaseConnected, 
     supabaseUrl, 
@@ -83,6 +88,38 @@ export const SettingsView: React.FC = () => {
 
   const handleToggle = (key: keyof typeof settings) => {
     updateSettings({ [key]: !settings[key] });
+  };
+
+  const handleBackupData = () => {
+    try {
+      const backupData = {
+        profiles,
+        activeProfile,
+        accounts,
+        transactions,
+        recurringItems,
+        challenge,
+        settings,
+        backedUpAt: new Date().toISOString(),
+        version: '1.0.0'
+      };
+      
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+        JSON.stringify(backupData, null, 2)
+      )}`;
+      
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', jsonString);
+      downloadAnchor.setAttribute(
+        'download',
+        `expense_tracker_backup_${new Date().toISOString().split('T')[0]}.json`
+      );
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch (e) {
+      alert('Failed to generate backup file.');
+    }
   };
 
   return (
@@ -560,10 +597,25 @@ export const SettingsView: React.FC = () => {
       {/* HELP AND WIPT DATA MODULE */}
       <div className="space-y-3.5">
         <button 
+          id="btn_backup_data"
+          onClick={handleBackupData}
+          className="w-full bg-white border border-slate-100 rounded-2xl py-3 px-4 flex items-center justify-between text-xs text-slate-700 hover:bg-slate-50 transition"
+        >
+          <div className="flex items-center space-x-2.5">
+            <Download className="w-4.5 h-4.5 text-indigo-600" />
+            <div className="text-left">
+              <span className="font-bold block text-slate-800">Backup Data Snapshot</span>
+              <span className="text-[10px] text-slate-400 font-semibold">Download offline JSON backup</span>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-300" />
+        </button>
+
+        <button 
           onClick={() => {
             alert("No Spend Day Challenge: Keep logging days you don't spend. Spend Pulse: Enter your monthly income first. Supabase: Hook up your tables using our SQL script.");
           }}
-          className="w-full bg-white border border-slate-100 rounded-2xl py-3 px-4 flex items-center justify-between text-xs text-slate-700 hover:bg-slate-50"
+          className="w-full bg-[#FFFFFF]/90 backdrop-blur-xs border border-slate-100 rounded-2xl py-3 px-4 flex items-center justify-between text-xs text-slate-700 hover:bg-slate-50 transition"
         >
           <div className="flex items-center space-x-2.5">
             <HelpCircle className="w-4.5 h-4.5 text-[#64748B]" />

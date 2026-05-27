@@ -40,13 +40,68 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES);
-  const [activeProfile, setActiveProfile] = useState<Profile>(INITIAL_PROFILES[0]);
-  const [accounts, setAccounts] = useState<Account[]>(INITIAL_ACCOUNTS);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [recurringItems, setRecurringItems] = useState<RecurringItem[]>(INITIAL_RECURRING_ITEMS);
-  const [challenge, setChallenge] = useState<Challenge>(INITIAL_CHALLENGE);
-  const [settings, setSettings] = useState<UserSettings>(INITIAL_SETTINGS);
+  const [profiles, setProfiles] = useState<Profile[]>(() => {
+    try {
+      const stored = localStorage.getItem('expenses_profiles');
+      return stored ? JSON.parse(stored) : INITIAL_PROFILES;
+    } catch (e) {
+      return INITIAL_PROFILES;
+    }
+  });
+
+  const [activeProfile, setActiveProfile] = useState<Profile>(() => {
+    try {
+      const stored = localStorage.getItem('expenses_active_profile');
+      return stored ? JSON.parse(stored) : INITIAL_PROFILES[0];
+    } catch (e) {
+      return INITIAL_PROFILES[0];
+    }
+  });
+
+  const [accounts, setAccounts] = useState<Account[]>(() => {
+    try {
+      const stored = localStorage.getItem('expenses_accounts');
+      return stored ? JSON.parse(stored) : INITIAL_ACCOUNTS;
+    } catch (e) {
+      return INITIAL_ACCOUNTS;
+    }
+  });
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    try {
+      const stored = localStorage.getItem('expenses_transactions');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [recurringItems, setRecurringItems] = useState<RecurringItem[]>(() => {
+    try {
+      const stored = localStorage.getItem('expenses_recurring');
+      return stored ? JSON.parse(stored) : INITIAL_RECURRING_ITEMS;
+    } catch (e) {
+      return INITIAL_RECURRING_ITEMS;
+    }
+  });
+
+  const [challenge, setChallenge] = useState<Challenge>(() => {
+    try {
+      const stored = localStorage.getItem('expenses_challenge');
+      return stored ? JSON.parse(stored) : INITIAL_CHALLENGE;
+    } catch (e) {
+      return INITIAL_CHALLENGE;
+    }
+  });
+
+  const [settings, setSettings] = useState<UserSettings>(() => {
+    try {
+      const stored = localStorage.getItem('expenses_settings');
+      return stored ? JSON.parse(stored) : INITIAL_SETTINGS;
+    } catch (e) {
+      return INITIAL_SETTINGS;
+    }
+  });
   
   // Supabase states
   const [supabaseUrl, setSupabaseUrl] = useState('');
